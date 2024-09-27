@@ -44,11 +44,22 @@ function identificarToken(token) {
     return ["IDENTIFICADOR", codigoTokens.IDENTIFICADOR];
 }
 
-// Função para gerar tokens do código-fonte
+// Função para gerar tokens do código-fonte e identificar a linha em que estão
 function gerarTokens(codigo) {
+    const linhas = codigo.split('\n');
     const regex = /\"[^\"]*\"|\w+|==|!=|<=|%|>=|&&|\|\||[+\-*/=<>;,\(\)\{\}\[\]\"']/g;
-    const tokens = codigo.match(regex);
-    return tokens;
+    const tokensComLinha = [];
+
+    linhas.forEach((linha, index) => {
+        const tokens = linha.match(regex);
+        if (tokens) {
+            tokens.forEach(token => {
+                tokensComLinha.push({ token, linha: index + 1 });
+            });
+        }
+    });
+
+    return tokensComLinha;
 }
 
 // Função para validar a gramática com base nos tokens gerados
@@ -99,10 +110,11 @@ function validarGramatica(tokens) {
     return resultadoSintaxe;
 }
 
-// Função para gerar a saída no segundo textarea
+// Função para processar o código e gerar a saída no segundo textarea
 function processarCodigo() {
     const codigoFonte = document.getElementById('codigoFonte').value;
-    const tokens = gerarTokens(codigoFonte);
+    const tokensComLinha = gerarTokens(codigoFonte);
+    const tokens = tokensComLinha.map(t => t.token);
     const resultadoSintaxe = validarGramatica(tokens);
 
     // Limpar a tabela anterior
@@ -110,16 +122,20 @@ function processarCodigo() {
     tabelaResultado.innerHTML = '';
 
     // Adicionar os tokens à tabela
-    tokens.forEach(token => {
+    let contador = 1; // Contador para identificar o número do token
+    tokensComLinha.forEach(({ token, linha }) => {
         const [tipoToken, codigoToken] = identificarToken(token);
         const novaLinha = `
             <tr>
+                <td>${contador}</td>
                 <td>${token}</td>
                 <td>${tipoToken}</td>
                 <td>${codigoToken}</td>
+                <td>${linha}</td>
             </tr>
         `;
         tabelaResultado.innerHTML += novaLinha;
+        contador++;
     });
 
     // Exibir o resultado da análise sintática
